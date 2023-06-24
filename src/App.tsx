@@ -1,8 +1,11 @@
 import "./App.css";
 import { useState, useEffect } from "react";
-import { v4 as uuidv4 } from "uuid";
+import { FormTask } from "./components/FormTask";
+import { DeleteCrossButton } from "./components/DeleteCrossButton";
+import { ProgressBarComponent } from "./components/ProgressBar";
+import { ImDoneButton } from "./components/ImDoneButton";
 
-interface Props {
+export interface Task {
   id: string;
   text: string;
   state: boolean;
@@ -11,7 +14,7 @@ interface Props {
 export default function App() {
   //We initialize task as un parsed version of "save" where save is "taskList" in the localStorage.
   //if there is no "taskList created yet, we initialize task as an empty array.
-  const [task, setTask] = useState<Props[]>(() => {
+  const [task, setTask] = useState<Task[]>(() => {
     const save = localStorage.getItem("taskList");
 
     if (save) {
@@ -30,41 +33,11 @@ export default function App() {
     "Not currenlty doing anything"
   );
 
-  const [currentTask, setCurrentTask] = useState<Props>();
+  const [currentTask, setCurrentTask] = useState<Task>();
 
   useEffect(() => {
-    localStorage.setItem("taskList", JSON.stringify(task));
+    localStorage.setItem("taskList", JSON.stringify(task)); //On fait stringify car le localStorage ne prend que les string
   }, [task]);
-
-  function addTask(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    setTask([
-      {
-        //Here we generate an random id with the package uuid.
-        id: uuidv4(),
-        text: text,
-        state: false,
-      },
-      ...task,
-    ]);
-
-    setText("");
-  }
-
-  function deleteTask(id: string) {
-    const removeTask = task.filter((elemOfTask) => elemOfTask.id != id);
-
-    const newTask = [...task];
-    const taskToUpdate = newTask.filter((Elem) => Elem.id == id)[0];
-    const index = newTask.indexOf(taskToUpdate);
-    if (newTask[index].text == currentTaskText) {
-      let copyCurrentTaskText = "";
-      copyCurrentTaskText = "Not currenlty doing anything";
-      setCurrentTaskText(copyCurrentTaskText);
-    }
-
-    setTask(removeTask);
-  }
 
   function changeState(id: string) {
     console.log(task);
@@ -107,59 +80,59 @@ export default function App() {
     setCurrentTask(taskToUpdate);
   }
 
-  function progressBarCompletion() {
-    const newTask = [...task];
-    const tabTaskTrue = newTask.filter((elem) => elem.state == true);
-
-    return tabTaskTrue.length;
-  }
-
   return (
     <>
       <h1>To Do List</h1>
-      {task.map((element) => (
-        <ul className="taskAndCross" key={element.id}>
-          <input
-            type="checkbox"
-            className="checkbox"
-            checked={element.state}
-            onChange={() => changeState(element.id)}
-          />
-          <li>{element.text}</li>
-          <div className="btns">
-            {!element.state && (
-              <button className="doNow" onClick={() => doNow(element.id)}>
-                Do now
-              </button>
-            )}
-            <button
-              className="closeCross"
-              onClick={() => deleteTask(element.id)}
-            >
-              X
-            </button>
+      <div className="lr">
+        <div className="left">
+          {task.map((element) => (
+            <ul className="taskAndCross" key={element.id}>
+              <input
+                type="checkbox"
+                className="checkbox"
+                checked={element.state}
+                onChange={() => changeState(element.id)}
+              />
+              <li>{element.text}</li>
+              <div className="btns">
+                {!element.state && (
+                  <button className="doNow" onClick={() => doNow(element.id)}>
+                    Do now
+                  </button>
+                )}
+                <DeleteCrossButton
+                  setTask={setTask}
+                  setCurrentTaskText={setCurrentTaskText}
+                  task={task}
+                  currentTaskText={currentTaskText}
+                  id={element.id}
+                ></DeleteCrossButton>
+              </div>
+            </ul>
+          ))}
+          <div className="NTandPGB">
+            <FormTask
+              setTask={setTask}
+              setText={setText}
+              task={task}
+              text={text}
+            ></FormTask>
+            <ProgressBarComponent task={task}></ProgressBarComponent>
           </div>
-        </ul>
-      ))}
-      <div className="NTandPGB">
-        <form onSubmit={(e) => addTask(e)}>
-          <label>New Task </label>
-          <input value={text} onChange={(e) => setText(e.target.value)} />
-        </form>
-        <div className="PGBdiv">
-          <label>Progression </label>
-          <progress
-            id="file"
-            max={task.length}
-            value={progressBarCompletion()}
-          ></progress>
+        </div>
+        <div className="right">
+          <h2>Currently doing</h2>
+          <p className="taskText">{currentTaskText}</p>
+          <ImDoneButton
+            task={task}
+            setTask={setTask}
+            currentTaskText={currentTaskText}
+            setCurrentTaskText={setCurrentTaskText}
+            setCurrentTask={setCurrentTask}
+            id={currentTask?.id}
+          ></ImDoneButton>
         </div>
       </div>
-      <h2>Currently doing</h2>
-      <p className="taskText">{currentTaskText}</p>
-      <button className="rocket" onClick={() => changeState(currentTask.id)}>
-        I'm done &#128640;
-      </button>
     </>
   );
 }
